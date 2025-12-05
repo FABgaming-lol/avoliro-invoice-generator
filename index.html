@@ -17,18 +17,12 @@
       --bg-soft-black: #0d0d0d;
     }
 
-    * {
-      box-sizing: border-box;
-      font-family: "Segoe UI", Arial, sans-serif;
-    }
+    * { box-sizing: border-box; font-family: "Segoe UI", Arial, sans-serif; }
 
     body {
-      margin: 0;
-      padding: 20px;
-      background: #0a0a0a;
-      color: var(--text-main);
-      display: flex;
-      justify-content: center;
+      margin: 0; padding: 20px;
+      background: #0a0a0a; color: var(--text-main);
+      display: flex; justify-content: center;
     }
 
     .container {
@@ -44,66 +38,40 @@
     }
 
     .panel {
-      background: #111;
-      padding: 20px;
-      border-radius: 10px;
+      background: #111; padding: 20px; border-radius: 10px;
     }
 
     input, textarea {
-      width: 100%;
-      padding: 8px;
-      background: #222;
+      width: 100%; padding: 8px; background: #222;
       border: 1px solid var(--border);
-      color: var(--text-main);
-      border-radius: 6px;
-      margin-top: 4px;
+      color: var(--text-main); border-radius: 6px; margin-top: 4px;
     }
 
     table {
-      width: 100%;
-      font-size: 14px;
-      margin-top: 10px;
+      width: 100%; font-size: 14px; margin-top: 10px;
       border-collapse: collapse;
     }
 
-    th, td {
-      border: 1px solid #222;
-      padding: 6px;
-    }
-
+    th, td { border: 1px solid #222; padding: 6px; }
     th {
-      background: #0a0a0a;
-      text-transform: uppercase;
-      font-size: 10px;
+      background: #0a0a0a; text-transform: uppercase; font-size: 10px;
     }
 
     #add-item {
-      width: 100%;
-      padding: 8px;
-      margin-top: 6px;
-      background: #333;
-      border: none;
-      color: white;
-      cursor: pointer;
+      width: 100%; padding: 8px; margin-top: 6px;
+      background: #333; border: none; color: white; cursor: pointer;
     }
 
     #generate-pdf {
-      width: 100%;
-      padding: 10px;
-      margin-top: 12px;
-      background: #fff;
-      border: none;
-      color: #000;
-      font-weight: bold;
-      cursor: pointer;
+      width: 100%; padding: 10px; margin-top: 12px;
+      background: #fff; border: none; color: #000;
+      font-weight: bold; cursor: pointer;
     }
 
-    /* ---------------- PDF PREVIEW BLACK THEME ---------------- */
-
+    /* ---------------- PDF PREVIEW DARK ---------------- */
     #invoice-preview {
       background: var(--bg-soft-black);
-      padding: 20px;
-      color: #fff;
+      padding: 20px; color: #fff;
       border-radius: 8px;
       min-height: 1050px;
     }
@@ -114,74 +82,62 @@
       padding-bottom: 10px;
     }
 
-    .invoice-logo {
-      height: 70px;
-      width: auto;
+    .logo {
+      width: 160px;  /* Large logo size */
+      margin-bottom: 6px;
     }
 
-    .section {
-      margin-top: 14px;
-    }
+    .section { margin-top: 14px; }
 
     .summary {
-      width: 260px;
-      margin-left: auto;
-      margin-top: 14px;
-      border-top: 1px solid var(--border);
+      width: 260px; margin-left: auto;
+      margin-top: 14px; border-top: 1px solid var(--border);
       padding-top: 10px;
     }
 
     .footer {
-      margin-top: 20px;
-      border-top: 1px solid var(--border);
-      padding-top: 10px;
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 11px;
+      margin-top: 20px; border-top: 1px solid var(--border);
+      padding-top: 10px; text-align: center;
+      color: var(--text-muted); font-size: 11px;
     }
   </style>
 </head>
 <body>
   <div class="container">
 
-    <!-- LEFT SIDE FORM -->
+    <!-- LEFT INPUT PANEL -->
     <div class="panel">
-
       <h2>Create Invoice</h2>
-      <label>Client / Project Name:</label>
+      <label>Client / Project</label>
       <input id="client-name" type="text">
 
       <div style="display:flex; gap:10px; margin-top:8px;">
         <div>
-          <label>Date:</label>
-          <input id="invoice-date" type="date">
+          <label>Date</label><input id="invoice-date" type="date">
         </div>
         <div>
-          <label>Due:</label>
-          <input id="due-date" type="date">
+          <label>Due</label><input id="due-date" type="date">
         </div>
       </div>
 
-      <label style="margin-top:8px;">Invoice Number:</label>
+      <label style="margin-top:8px;">Invoice Number</label>
       <input id="invoice-number" type="text">
 
-      <label style="margin-top:8px;">Bill From (Avoliro info)</label>
+      <label style="margin-top:8px;">Bill From</label>
       <textarea id="from-block">AVOLIRO
 Bangalore, India
 avoliro.com</textarea>
 
-      <label>Bill To:</label>
+      <label>Bill To</label>
       <textarea id="to-block"></textarea>
 
       <h3>Line Items</h3>
-
       <table>
         <thead>
           <tr><th>Description</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr>
         </thead>
         <tbody id="items-body"></tbody>
       </table>
-
       <button id="add-item">+ Add Item</button>
 
       <h3>Tax %</h3>
@@ -193,31 +149,28 @@ avoliro.com</textarea>
       <button id="generate-pdf">Generate Invoice PDF</button>
     </div>
 
-    <!-- RIGHT SIDE PDF PREVIEW -->
+    <!-- RIGHT PDF PREVIEW -->
     <div class="panel" id="invoice-preview">
       <div class="invoice-header">
-        <img class="invoice-logo" src="avoliro-logo.png">
-        <p style="margin:2px 0; font-size:11px; letter-spacing:0.2em;">ELEVATE EVERYTHING</p>
+        <!-- EMBEDDED BASE64 LOGO BELOW -->
+        <img class="logo" id="invoice-logo" />
+
+        <p style="margin:4px 0 6px; font-size:12px; opacity:0.9;">
+          Elevate Everything
+        </p>
+
         <h1 style="margin:4px 0;">INVOICE</h1>
         <div style="font-size:12px;">
-          <span id="pv-invoice-number">Invoice</span><br>
+          <span id="pv-invoice-number"></span><br>
           <span id="pv-invoice-date"></span> → <span id="pv-due-date"></span>
         </div>
       </div>
 
-      <div class="section">
-        <strong>From:</strong><br>
-        <pre id="pv-from-block"></pre>
-      </div>
+      <div class="section"><strong>From:</strong><br><pre id="pv-from-block"></pre></div>
+      <div class="section"><strong>To:</strong><br><pre id="pv-to-block"></pre></div>
 
       <div class="section">
-        <strong>To:</strong><br>
-        <pre id="pv-to-block"></pre>
-      </div>
-
-      <div class="section">
-        <strong>Client / Project:</strong><br>
-        <span id="pv-client-name"></span>
+        <strong>Client / Project</strong><br><span id="pv-client-name"></span>
       </div>
 
       <table class="section">
@@ -234,18 +187,23 @@ avoliro.com</textarea>
       </div>
 
       <div class="section">
-        <strong>Notes:</strong><br>
-        <span id="pv-notes"></span>
+        <strong>Notes</strong><br><span id="pv-notes"></span>
       </div>
 
       <div class="footer">
-        Thank you for working with AVOLIRO ❤️
+        Thank you for choosing Avoliro.
       </div>
     </div>
+
   </div>
 
+
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+
+  // INSERT BASE64 LOGO INTO HTML
+  document.getElementById("invoice-logo").src =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAXgAAAF4CAYAAAD1qgPZAAA...TRIMMED_FOR_LENGTH";
 
   const itemsBody = document.getElementById("items-body");
   const pvItemsBody = document.getElementById("pv-items-body");
@@ -302,7 +260,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  document.getElementById("add-item").onclick = () => { addItem(); update(); };
+  document.getElementById("add-item").onclick = () => {
+    addItem(); update();
+  };
   addItem();
 
   document.querySelectorAll("input,textarea,#tax").forEach(el =>
@@ -310,6 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("generate-pdf").onclick = async () => {
     update();
+
     const element = document.getElementById("invoice-preview");
     const canvas = await html2canvas(element, {
       backgroundColor: "#0d0d0d",
