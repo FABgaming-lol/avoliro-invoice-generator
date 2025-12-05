@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Avoliro Invoice Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- jsPDF for PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #050711;
+      --card-bg: #0f172a;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.12);
+      --border: #1f2937;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --danger: #f97373;
+      --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.5);
+      --radius-xl: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #111827 0, #020617 55%);
+      color: var(--text-main);
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    .app-shell {
+      max-width: 1100px;
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: linear-gradient(145deg, #020617, #020617);
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      box-shadow: var(--shadow-soft);
+      padding: 20px 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background: radial-gradient(circle at 0 0, var(--accent-soft), transparent 55%);
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    .panel-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .brand-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.93);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .brand-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 6px rgba(56, 189, 248, 0.18);
+    }
+
+    h1 {
+      font-size: 20px;
+      margin: 0;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .tagline {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      max-width: 280px;
+      text-align: right;
+    }
+
+    /* FORM SIDE */
+
+    .field-group {
+      margin-bottom: 14px;
+    }
+
+    .field-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: rgba(15, 23, 42, 0.75);
+      color: var(--text-main);
+      font-size: 13px;
+      outline: none;
+      transition: border 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #6b7280;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.25);
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    textarea {
+      min-height: 70px;
+      resize: vertical;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .pill-note {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ITEMS TABLE */
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 6px;
+    }
+
+    thead {
+      background: rgba(15, 23, 42, 0.9);
+    }
+
+    th,
+    td {
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.9);
+      text-align: left;
+    }
+
+    th {
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    td input[type="text"],
+    td input[type="number"] {
+      font-size: 12px;
+      padding: 6px 8px;
+    }
+
+    .item-desc-input {
+      width: 100%;
+    }
+
+    .item-number-input {
+      width: 90px;
+    }
+
+    .item-total-cell {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .remove-btn {
+      border-radius: 999px;
+      padding: 4px 7px;
+      border: 1px solid rgba(239, 68, 68, 0.6);
+      background: transparent;
+      color: var(--danger);
+      font-size: 12px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .remove-btn:hover {
+      background: rgba(239, 68, 68, 0.08);
+    }
+
+    .items-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+
+    .items-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+      color: var(--text-muted);
+    }
+
+    .button,
+    button {
+      font-size: 13px;
+      border-radius: 999px;
+      border: none;
+      padding: 8px 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 500;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      transition: background 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease,
+        border 0.15s ease;
+    }
+
+    .button span.icon {
+      font-size: 15px;
+    }
+
+    .button:hover {
+      background: rgba(56, 189, 248, 0.2);
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.9);
+      transform: translateY(-0.5px);
+    }
+
+    .button:active {
+      transform: translateY(0);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.85);
+    }
+
+    .button-primary {
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+      color: #0b1120;
+      border-color: rgba(191, 219, 254, 0.8);
+      box-shadow: 0 18px 40px rgba(56, 189, 248, 0.45);
+    }
+
+    .button-primary:hover {
+      background: linear-gradient(135deg, #7dd3fc, #38bdf8);
+    }
+
+    .button-full {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 13px;
+    }
+
+    .summary-label {
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 11px;
+    }
+
+    .summary-value {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .summary-total {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    /* DARK INVOICE PREVIEW (PDF CONTENT) */
+
+    #invoice-preview {
+      background: #0d0d0d;      /* soft black */
+      color: #f9fafb;           /* white-ish text */
+      border-radius: 16px;
+      padding: 22px 26px;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      font-size: 13px;
+    }
+
+    .invoice-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid #374151;
+      padding-bottom: 14px;
+    }
+
+    .invoice-brand-block {
+      text-align: center;
+    }
+
+    .invoice-brand-logo {
+      height: 70px;
+      width: auto;
+      margin-bottom: 6px;
+      image-rendering: crisp-edges;
+    }
+
+    .invoice-brand-tagline {
+      margin-top: 2px;
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #e5e7eb;
+    }
+
+    .invoice-meta {
+      text-align: center;
+      font-size: 12px;
+    }
+
+    .invoice-meta-title {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .meta-line {
+      margin-top: 4px;
+    }
+
+    .meta-label {
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 10px;
+    }
+
+    .meta-value {
+      font-weight: 500;
+      color: #f9fafb;
+    }
+
+    .invoice-section-row {
+      display: flex;
+      gap: 18px;
+      margin-top: 10px;
+    }
+
+    .bill-to,
+    .bill-from {
+      flex: 1;
+    }
+
+    .section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+      color: #9ca3af;
+      margin-bottom: 3px;
+    }
+
+    .section-body {
+      font-size: 13px;
+      white-space: pre-wrap;
+      color: #f9fafb;
+    }
+
+    .preview-items-table {
+      margin-top: 10px;
+      border-top: 1px solid #374151;
+      border-bottom: 1px solid #374151;
+    }
+
+    .preview-items-table table {
+      margin-top: 0;
+    }
+
+    .preview-items-table th,
+    .preview-items-table td {
+      border-color: #374151;
+      font-size: 12px;
+      color: #f9fafb;
+    }
+
+    .preview-items-table thead {
+      background: #020617;
+    }
+
+    .preview-summary {
+      align-self: flex-end;
+      width: 260px;
+      margin-top: 16px;
+      font-size: 13px;
+    }
+
+    .preview-summary hr {
+      border: none;
+      border-top: 1px solid #4b5563;
+      margin: 6px 0;
+    }
+
+    .preview-summary .summary-label {
+      color: #9ca3af;
+    }
+
+    .preview-summary .summary-value {
+      color: #f9fafb;
+    }
+
+    .preview-notes-block {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #e5e7eb;
+    }
+
+    .preview-footer {
+      margin-top: auto;
+      font-size: 11px;
+      color: #9ca3af;
+      border-top: 1px solid #374151;
+      padding-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .preview-footer strong {
+      color: #e5e7eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- LEFT: INPUT PANEL -->
+    <div class="panel">
+      <div class="panel-inner">
+        <div class="panel-header">
+          <div>
+            <div class="brand-chip">
+              <div class="brand-dot"></div>
+              <span>AVOLIRO · OPS TOOL</span>
+            </div>
+            <h1>Invoice Builder</h1>
+            <div class="tagline">Real invoices · Real clients</div>
+          </div>
+          <div class="hint">
+            Fill the blanks, adjust tax & notes, then export a clean PDF invoice branded for Avoliro.
+          </div>
+        </div>
+
+        <div class="field-group">
+          <span class="field-label">Client & Invoice Info</span>
+          <div class="grid-2">
+            <div>
+              <input
+                type="text"
+                id="client-name"
+                placeholder="Client / Brand (e.g. Loops & Laurels)"
+              />
+            </div>
+            <div class="grid-2">
+              <input type="date" id="invoice-date" />
+              <input type="date" id="due-date" />
+            </div>
+          </div>
+          <div class="grid-2" style="margin-top: 6px;">
+            <input
+              type="text"
+              id="invoice-number"
+              placeholder="Invoice # (e.g. AVL-2025-001)"
+            />
+            <input
+              type="text"
+              id="client-email"
+              placeholder="Client email (for your reference only)"
+            />
+          </div>
+          <div class="pill-note">
+            You can leave email blank – it will not show in the invoice.
+          </div>
+        </div>
+
+        <div class="grid-2 field-group">
+          <div>
+            <span class="field-label">Bill From (Avoliro)</span>
+            <textarea
+              id="from-block"
+              placeholder="AVOLIRO&#10;Bangalore, India&#10;avoliro.com"
+            >AVOLIRO
+Bangalore, India
+avoliro.com</textarea>
+          </div>
+          <div>
+            <span class="field-label">Bill To (Client)</span>
+            <textarea
+              id="to-block"
+              placeholder="Client name&#10;Contact person&#10;Address / Notes"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="items-header-row">
+          <div class="items-title">Line Items</div>
+          <button type="button" class="button" id="add-item">
+            <span class="icon">+</span> Add Item
+          </button>
+        </div>
+
+        <div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 45%;">Service / Description</th>
+                <th style="width: 15%;">Qty</th>
+                <th style="width: 20%;">Unit Price (USD)</th>
+                <th style="width: 15%; text-align: right;">Line Total</th>
+                <th style="width: 5%;"></th>
+              </tr>
+            </thead>
+            <tbody id="items-body">
+              <!-- Rows injected by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="field-group" style="margin-top: 10px;">
+          <div class="grid-3">
+            <div>
+              <span class="field-label">Tax (%)</span>
+              <input type="number" id="tax" value="0" min="0" step="0.01" />
+              <div class="pill-note">GST/VAT as percentage.</div>
+            </div>
+            <div>
+              <span class="field-label">Subtotal (USD)</span>
+              <div class="summary-value" id="subtotal-display">0.00</div>
+            </div>
+            <div>
+              <span class="field-label">Total (USD)</span>
+              <div class="summary-value summary-total" id="total-display">0.00</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <span class="field-label">Note on Invoice (optional)</span>
+          <textarea
+            id="notes"
+            placeholder="Payment terms, bank details, or any special note. This will show at the bottom of the invoice."
+          >Payment is due within 7 days by bank transfer or UPI unless otherwise agreed in writing.</textarea>
+        </div>
+
+        <div class="toolbar">
+          <button type="button" class="button button-primary button-full" id="generate-pdf">
+            <span class="icon">⬇</span> Generate Invoice PDF
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: LIVE PREVIEW (THIS BECOMES THE PDF) -->
+    <div class="panel">
+      <div class="panel-inner">
+        <div class="panel-header" style="margin-bottom: 10px;">
+          <div>
+            <div class="brand-chip">
+              <div class="brand-dot"></div>
+              <span>Live Invoice Preview</span>
+            </div>
+          </div>
+          <div class="hint">
+            Everything inside this black card is rendered into your final PDF.
+          </div>
+        </div>
+
+        <div id="invoice-preview">
+          <div class="invoice-header">
+            <div class="invoice-brand-block">
+              <!-- Use your real AVOLIRO logo here -->
+              <!-- Place avoliro-logo.png in same folder OR change src -->
+              <img
+                src="avoliro-logo.png"
+                alt="AVOLIRO Logo"
+                class="invoice-brand-logo"
+              />
+              <div class="invoice-brand-tagline">ELEVATE EVERYTHING</div>
+            </div>
+            <div class="invoice-meta">
+              <div class="invoice-meta-title">INVOICE</div>
+              <div class="meta-line">
+                <span class="meta-label">Invoice #</span><br />
+                <span class="meta-value" id="pv-invoice-number">–</span>
+              </div>
+              <div class="meta-line">
+                <span class="meta-label">Date</span><br />
+                <span class="meta-value" id="pv-invoice-date">–</span>
+              </div>
+              <div class="meta-line">
+                <span class="meta-label">Due Date</span><br />
+                <span class="meta-value" id="pv-due-date">–</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="invoice-section-row">
+            <div class="bill-from">
+              <div class="section-title">Bill From</div>
+              <div class="section-body" id="pv-from-block"></div>
+            </div>
+            <div class="bill-to">
+              <div class="section-title">Bill To</div>
+              <div class="section-body" id="pv-to-block"></div>
+            </div>
+          </div>
+
+          <div style="margin-top: 10px; font-size: 13px;">
+            <span class="section-title">Client / Project</span>
+            <div id="pv-client-name" style="margin-top: 2px; color:#f9fafb;"></div>
+          </div>
+
+          <div class="preview-items-table">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 44%;">Description</th>
+                  <th style="width: 14%;">Qty</th>
+                  <th style="width: 22%;">Unit Price (USD)</th>
+                  <th style="width: 20%; text-align: right;">Line Total (USD)</th>
+                </tr>
+              </thead>
+              <tbody id="pv-items-body">
+                <!-- Cloned from inputs -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="preview-summary">
+            <div class="summary-row">
+              <div class="summary-label">Subtotal</div>
+              <div class="summary-value" id="pv-subtotal">0.00</div>
+            </div>
+            <div class="summary-row">
+              <div class="summary-label">
+                Tax (<span id="pv-tax-rate">0</span>%)
+              </div>
+              <div class="summary-value" id="pv-tax-amount">0.00</div>
+            </div>
+            <hr />
+            <div class="summary-row summary-total">
+              <div class="summary-label">Total Due (USD)</div>
+              <div class="summary-value" id="pv-total">0.00</div>
+            </div>
+          </div>
+
+          <div class="preview-notes-block">
+            <div class="section-title">Notes</div>
+            <div id="pv-notes">
+              Payment is due within 7 days by bank transfer or UPI unless otherwise agreed in
+              writing.
+            </div>
+          </div>
+
+          <div class="preview-footer">
+            <div>
+              <strong>Thank you for choosing AVOLIRO.</strong><br />
+              For questions about this invoice, reply to your usual contact channel.
+            </div>
+            <div>
+              <strong>avoliro.vercel.app</strong><br />
+              "Elevate Everything"
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const itemsBody = document.getElementById("items-body");
+      const pvItemsBody = document.getElementById("pv-items-body");
+
+      const taxInput = document.getElementById("tax");
+      const subtotalDisplay = document.getElementById("subtotal-display");
+      const totalDisplay = document.getElementById("total-display");
+
+      const generateBtn = document.getElementById("generate-pdf");
+
+      const clientNameInput = document.getElementById("client-name");
+      const invoiceDateInput = document.getElementById("invoice-date");
+      const dueDateInput = document.getElementById("due-date");
+      const invoiceNumberInput = document.getElementById("invoice-number");
+      const fromBlockInput = document.getElementById("from-block");
+      const toBlockInput = document.getElementById("to-block");
+      const notesInput = document.getElementById("notes");
+
+      const pvClientName = document.getElementById("pv-client-name");
+      const pvInvoiceDate = document.getElementById("pv-invoice-date");
+      const pvDueDate = document.getElementById("pv-due-date");
+      const pvInvoiceNumber = document.getElementById("pv-invoice-number");
+      const pvFromBlock = document.getElementById("pv-from-block");
+      const pvToBlock = document.getElementById("pv-to-block");
+      const pvSubtotal = document.getElementById("pv-subtotal");
+      const pvTaxRate = document.getElementById("pv-tax-rate");
+      const pvTaxAmount = document.getElementById("pv-tax-amount");
+      const pvTotal = document.getElementById("pv-total");
+      const pvNotes = document.getElementById("pv-notes");
+
+      function formatDateForPreview(input) {
+        if (!input.value) return "–";
+        const d = new Date(input.value + "T00:00:00");
+        if (isNaN(d.getTime())) return input.value;
+        const opts = { day: "2-digit", month: "short", year: "numeric" };
+        return d.toLocaleDateString(undefined, opts);
+      }
+
+      function addItemRow() {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>
+            <input type="text" class="item-desc-input" placeholder="Describe the service or deliverable" />
+          </td>
+          <td>
+            <input type="number" class="item-number-input item-qty" min="0" step="1" value="1" />
+          </td>
+          <td>
+            <input type="number" class="item-number-input item-price" min="0" step="0.01" value="0" />
+          </td>
+          <td class="item-total-cell">
+            <span class="item-total">0.00</span>
+          </td>
+          <td>
+            <button type="button" class="remove-btn" title="Remove line">×</button>
+          </td>
+        `;
+        itemsBody.appendChild(tr);
+      }
+
+      function syncPreviewFromInputs() {
+        pvClientName.textContent = clientNameInput.value || "—";
+        pvInvoiceDate.textContent = formatDateForPreview(invoiceDateInput);
+        pvDueDate.textContent = formatDateForPreview(dueDateInput);
+        pvInvoiceNumber.textContent =
+          invoiceNumberInput.value.trim() || "To be assigned";
+
+        pvFromBlock.textContent = fromBlockInput.value;
+        pvToBlock.textContent = toBlockInput.value;
+
+        pvNotes.textContent =
+          notesInput.value.trim() ||
+          "Thank you for your business.";
+
+        // Items
+        pvItemsBody.innerHTML = "";
+        const rows = itemsBody.querySelectorAll("tr");
+        rows.forEach((row) => {
+          const desc = row.querySelector(".item-desc-input").value;
+          const qty = row.querySelector(".item-qty").value || "0";
+          const price = row.querySelector(".item-price").value || "0.00";
+          const lineTotal = row.querySelector(".item-total").textContent || "0.00";
+
+          const pvRow = document.createElement("tr");
+          pvRow.innerHTML = `
+            <td>${desc || "&nbsp;"}</td>
+            <td>${qty}</td>
+            <td>${parseFloat(price || 0).toFixed(2)}</td>
+            <td style="text-align:right;">${parseFloat(lineTotal || 0).toFixed(2)}</td>
+          `;
+          pvItemsBody.appendChild(pvRow);
+        });
+      }
+
+      function recalcTotals() {
+        let subtotal = 0;
+        const rows = itemsBody.querySelectorAll("tr");
+        rows.forEach((row) => {
+          const qty = parseFloat(row.querySelector(".item-qty").value) || 0;
+          const price = parseFloat(row.querySelector(".item-price").value) || 0;
+          const lineTotal = qty * price;
+          row.querySelector(".item-total").textContent = lineTotal.toFixed(2);
+          subtotal += lineTotal;
+        });
+
+        const taxRate = parseFloat(taxInput.value) || 0;
+        const taxAmount = subtotal * (taxRate / 100);
+        const total = subtotal + taxAmount;
+
+        subtotalDisplay.textContent = subtotal.toFixed(2);
+        totalDisplay.textContent = total.toFixed(2);
+
+        pvSubtotal.textContent = subtotal.toFixed(2);
+        pvTaxRate.textContent = taxRate.toFixed(2).replace(/\.00$/, "");
+        pvTaxAmount.textContent = taxAmount.toFixed(2);
+        pvTotal.textContent = total.toFixed(2);
+
+        syncPreviewFromInputs();
+      }
+
+      // INITIAL SETUP
+      addItemRow();
+      recalcTotals();
+
+      // EVENTS: items
+      itemsBody.addEventListener("input", (e) => {
+        if (
+          e.target.classList.contains("item-qty") ||
+          e.target.classList.contains("item-price") ||
+          e.target.classList.contains("item-desc-input")
+        ) {
+          recalcTotals();
+        }
+      });
+
+      itemsBody.addEventListener("click", (e) => {
+        if (e.target.classList.contains("remove-btn")) {
+          e.target.closest("tr").remove();
+          recalcTotals();
+        }
+      });
+
+      document.getElementById("add-item").addEventListener("click", () => {
+        addItemRow();
+        recalcTotals();
+      });
+
+      // EVENTS: other fields
+      [
+        clientNameInput,
+        invoiceDateInput,
+        dueDateInput,
+        invoiceNumberInput,
+        fromBlockInput,
+        toBlockInput,
+        notesInput,
+        taxInput,
+      ].forEach((el) =>
+        el.addEventListener("input", () => {
+          recalcTotals();
+        })
+      );
+
+      // PDF GENERATION (dark theme preserved)
+      generateBtn.addEventListener("click", () => {
+        const invoiceElement = document.getElementById("invoice-preview");
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF("p", "pt", "a4");
+
+        // Make sure preview is up to date
+        recalcTotals();
+
+        doc.html(invoiceElement, {
+          callback: function (doc) {
+            const number = invoiceNumberInput.value.trim() || "invoice";
+            const safeNumber = number.replace(/[^\w\-]+/g, "_");
+            doc.save(`Avoliro-${safeNumber}.pdf`);
+          },
+          margin: [20, 20, 20, 20],
+          autoPaging: "text",
+          html2canvas: {
+            scale: 0.9,
+            useCORS: true,
+          },
+        });
+      });
+    });
+  </script>
+</body>
+</html>
